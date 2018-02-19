@@ -8,6 +8,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Speech.Synthesis;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -21,24 +22,33 @@ namespace BotClient
         private static string fromUser = "DirectLineSampleClientUser";
         private DirectLineClient client;
         private Conversation conversation;
+        private SpeechSynthesizer voice;
 
         public Client()
         {
             InitializeComponent();
+            SetupVoice();
             StartBotConversation();
-
         }
 
         private async Task StartBotConversation()
         {
-           client = new DirectLineClient(directLineSecret);
-
+            client = new DirectLineClient(directLineSecret);
+            
             conversation = await client.Conversations.StartConversationAsync();
 
             new System.Threading.Thread(async () => await ReadBotMessagesAsync(client, conversation.ConversationId)).Start();
 
-            SetText(sendText, "Hi");          
-                       
+            SetText(sendText, "Hi");
+
+        }
+
+        private void SetupVoice()
+        {
+            voice = new SpeechSynthesizer();
+            voice.SelectVoiceByHints(VoiceGender.Female);
+            voice.Volume = 100;
+            voice.Rate = 0;
         }
 
         private async Task ReadBotMessagesAsync(DirectLineClient client, string conversationId)
@@ -77,7 +87,7 @@ namespace BotClient
                         }
                     }
 
-                   SetText(metaText, "command\n");
+                    SetText(metaText, JsonConvert.SerializeObject(activity));
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
@@ -94,6 +104,12 @@ namespace BotClient
             {
                 txt.AppendText(text);
             }
+
+            // Read Text
+            if (txt.Name == chatHistoryText.Name)
+            {
+                voice.SpeakAsync(text);
+            }
         }
 
         private void RenderHeroCard(Attachment attachment)
@@ -105,10 +121,10 @@ namespace BotClient
 
             if (heroCard != null)
             {
-                SetText(chatHistoryText,string.Format("/{0}", new string('*', Width + 1)));
+                SetText(chatHistoryText, string.Format("/{0}", new string('*', Width + 1)));
                 SetText(chatHistoryText, string.Format("*{0}*", contentLine(heroCard.Title)));
-                SetText(chatHistoryText,string.Format("*{0}*", new string(' ', Width)));
-                SetText(chatHistoryText,string.Format("*{0}*", contentLine(heroCard.Text)));
+                SetText(chatHistoryText, string.Format("*{0}*", new string(' ', Width)));
+                SetText(chatHistoryText, string.Format("*{0}*", contentLine(heroCard.Text)));
                 SetText(chatHistoryText, string.Format("{0}/", new string('*', Width + 1)));
             }
         }
