@@ -37,7 +37,7 @@ namespace BotClient
 
             new System.Threading.Thread(async () => await ReadBotMessagesAsync(client, conversation.ConversationId)).Start();
 
-            sendText.Text = "Hi";          
+            SetText(sendText, "Hi");          
                        
         }
 
@@ -56,7 +56,7 @@ namespace BotClient
 
                 foreach (Activity activity in activities)
                 {
-                    chatHistoryText.AppendText(activity.Text);
+                    SetText(chatHistoryText, activity.Text);
 
                     if (activity.Attachments != null)
                     {
@@ -69,7 +69,7 @@ namespace BotClient
                                     break;
 
                                 case "image/png":
-                                    metaText.AppendText($"Opening the requested image '{attachment.ContentUrl}'");
+                                    SetText(metaText, $"Opening the requested image '{attachment.ContentUrl}'");
 
                                     Process.Start(attachment.ContentUrl);
                                     break;
@@ -77,10 +77,22 @@ namespace BotClient
                         }
                     }
 
-                    metaText.AppendText("command>");
+                   SetText(metaText, "command\n");
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+            }
+        }
+
+        private void SetText(TextBox txt, string text)
+        {
+            if (txt.InvokeRequired)
+            {
+                Invoke((MethodInvoker)(() => txt.AppendText(text + "\n")));
+            }
+            else
+            {
+                txt.AppendText(text);
             }
         }
 
@@ -93,17 +105,18 @@ namespace BotClient
 
             if (heroCard != null)
             {
-                chatHistoryText.AppendText(string.Format("/{0}", new string('*', Width + 1)));
-                chatHistoryText.AppendText(string.Format("*{0}*", contentLine(heroCard.Title)));
-                chatHistoryText.AppendText(string.Format("*{0}*", new string(' ', Width)));
-                chatHistoryText.AppendText(string.Format("*{0}*", contentLine(heroCard.Text)));
-                chatHistoryText.AppendText(string.Format("{0}/", new string('*', Width + 1)));
+                SetText(chatHistoryText,string.Format("/{0}", new string('*', Width + 1)));
+                SetText(chatHistoryText, string.Format("*{0}*", contentLine(heroCard.Title)));
+                SetText(chatHistoryText,string.Format("*{0}*", new string(' ', Width)));
+                SetText(chatHistoryText,string.Format("*{0}*", contentLine(heroCard.Text)));
+                SetText(chatHistoryText, string.Format("{0}/", new string('*', Width + 1)));
             }
         }
 
         private void sendButton_Click(object sender, EventArgs e)
         {
             Send(sendText.Text);
+            sendText.Clear();
         }
 
         private async void Send(string input)
