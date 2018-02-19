@@ -1,4 +1,5 @@
 ﻿using Microsoft.Bot.Connector.DirectLine;
+using Microsoft.CognitiveServices.SpeechRecognition;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -19,19 +20,120 @@ namespace BotClient
     {
         private static string directLineSecret = ConfigurationManager.AppSettings["DirectLineSecret"];
         private static string botId = ConfigurationManager.AppSettings["BotId"];
+        private static string speechKey = ConfigurationManager.AppSettings["SpeechKey"];
+        private static string authenticationUri = ConfigurationManager.AppSettings["AuthenticationUri"];
         private static string fromUser = "DirectLineSampleClientUser";
+
         private DirectLineClient client;
-        private Conversation conversation;
+        private Microsoft.Bot.Connector.DirectLine.Conversation conversation;
         private SpeechSynthesizer voice;
+        private MicrophoneRecognitionClient micClient;
+        private SpeechRecognitionMode Mode = SpeechRecognitionMode.ShortPhrase;        
+        
 
         public Client()
         {
             InitializeComponent();
             SetupVoice();
+            SetupMicrophone();
             StartBotConversation();
         }
+        #region Speech Client
 
-        #region Helpers
+        private void SetupMicrophone()
+        {
+            CreateMicrophoneRecoClient();
+            this.micClient.StartMicAndRecognition();
+        }
+
+        private void CreateMicrophoneRecoClient()
+        {
+            this.micClient = SpeechRecognitionServiceFactory.CreateMicrophoneClient(
+                this.Mode,
+                "en-US",
+                speechKey);
+            this.micClient.AuthenticationUri = authenticationUri;
+
+            // Event handlers for speech recognition results
+            this.micClient.OnMicrophoneStatus += this.OnMicrophoneStatus;
+            this.micClient.OnPartialResponseReceived += this.OnPartialResponseReceivedHandler;
+            if (this.Mode == SpeechRecognitionMode.ShortPhrase)
+            {
+                this.micClient.OnResponseReceived += this.OnMicShortPhraseResponseReceivedHandler;
+            }
+            else if (this.Mode == SpeechRecognitionMode.LongDictation)
+            {
+                this.micClient.OnResponseReceived += this.OnMicDictationResponseReceivedHandler;
+            }
+
+            this.micClient.OnConversationError += this.OnConversationErrorHandler;
+        }
+
+        private void OnConversationErrorHandler(object sender, SpeechErrorEventArgs e)
+        {
+            this.SetText(metaText, "--- OnConversationErrorHandler ---");
+        }
+
+        private void OnMicDictationResponseReceivedHandler(object sender, SpeechResponseEventArgs e)
+        {
+            this.SetText(metaText, "--- OnMicDictationResponseReceivedHandler ---");
+        }
+
+        private void OnMicShortPhraseResponseReceivedHandler(object sender, SpeechResponseEventArgs e)
+        {
+            Invoke((Action)(() =>
+            {
+                this.SetText(metaText, "--- OnMicShortPhraseResponseReceivedHandler ---");
+
+                // we got the final result, so it we can end the mic reco.  No need to do this
+                // for dataReco, since we already called endAudio() on it as soon as we were done
+                // sending all the data.
+                //this.micClient.EndMicAndRecognition();
+            }));
+            }
+
+        private void OnMicrophoneStatus(object sender, MicrophoneEventArgs e)
+        {
+            this.SetText(metaText, "--- OnMicrophoneStatus ---");
+        }
+
+        private void OnPartialResponseReceivedHandler(object sender, PartialSpeechResponseEventArgs e)
+        {
+            this.SetText(metaText, "--- OnMicrophoneStatus ---");
+        }
+
+        private void WriteResponseResult(SpeechResponseEventArgs e)
+        {
+            if (e.PhraseResponse.Results.Length == 0)
+            {
+                this.WriteLine("No phrase response is available.");
+            }
+            else
+            {
+                this.WriteLine("********* Final n-BEST Results *********");
+                for (int i = 0; i < e.PhraseResponse.Results.Length; i++)
+                {
+                    this.WriteLine(
+                        "[{0}] Confidence={1}, Text=\"{2}\"", 
+                        i, 
+                        e.PhraseResponse.Results[i].Confidence,
+                        e.PhraseResponse.Results[i].DisplayText);
+                }
+
+                this.WriteLine("\n");
+            }
+        }
+
+        private void WriteLine(string format, params object[] args)
+        {
+            var formattedStr = string.Format(format, args);
+            Trace.WriteLine(formattedStr);
+            SetText(metaText, formattedStr);
+        }
+
+        #endregion
+
+        #region Bot
 
         private async Task StartBotConversation()
         {
@@ -113,14 +215,22 @@ namespace BotClient
 
         private void SetText(TextBox txt, string text)
         {
-            if (txt.InvokeRequired)
+            try
             {
-                Invoke((MethodInvoker)(() => txt.AppendText(text + "\n")));
+                if (txt.InvokeRequired)
+                {
+                    Invoke((MethodInvoker)(() => txt.AppendText(text + "\n")));
+                }
+                else
+                {
+                    txt.AppendText(text);
+                }
             }
-            else
+            catch (Exception)
             {
-                txt.AppendText(text);
+                //sink this
             }
+           
 
             // Read Text
             if (txt.Name == chatHistoryText.Name)
