@@ -31,10 +31,12 @@ namespace BotClient
             StartBotConversation();
         }
 
+        #region Helpers
+
         private async Task StartBotConversation()
         {
             client = new DirectLineClient(directLineSecret);
-            
+
             conversation = await client.Conversations.StartConversationAsync();
 
             new System.Threading.Thread(async () => await ReadBotMessagesAsync(client, conversation.ConversationId)).Start();
@@ -49,6 +51,21 @@ namespace BotClient
             voice.SelectVoiceByHints(VoiceGender.Female);
             voice.Volume = 100;
             voice.Rate = 0;
+        }
+
+        private async void Send(string input)
+        {
+            if (!string.IsNullOrEmpty(input))
+            {
+                Activity userMessage = new Activity
+                {
+                    From = new ChannelAccount(fromUser),
+                    Text = input,
+                    Type = ActivityTypes.Message
+                };
+
+                await client.Conversations.PostActivityAsync(conversation.ConversationId, userMessage);
+            }
         }
 
         private async Task ReadBotMessagesAsync(DirectLineClient client, string conversationId)
@@ -127,27 +144,22 @@ namespace BotClient
                 SetText(chatHistoryText, string.Format("*{0}*", contentLine(heroCard.Text)));
                 SetText(chatHistoryText, string.Format("{0}/", new string('*', Width + 1)));
             }
-        }
+        } 
+        #endregion
 
+        #region Event Handlers
         private void sendButton_Click(object sender, EventArgs e)
         {
             Send(sendText.Text);
             sendText.Clear();
         }
 
-        private async void Send(string input)
+        private void SendText_Enter(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(input))
-            {
-                Activity userMessage = new Activity
-                {
-                    From = new ChannelAccount(fromUser),
-                    Text = input,
-                    Type = ActivityTypes.Message
-                };
+            Send(sendText.Text);
+            sendText.Clear();
+        } 
+        #endregion
 
-                await client.Conversations.PostActivityAsync(conversation.ConversationId, userMessage);
-            }
-        }
     }
 }
