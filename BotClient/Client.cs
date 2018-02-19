@@ -88,7 +88,9 @@ namespace BotClient
                 // we got the final result, so it we can end the mic reco.  No need to do this
                 // for dataReco, since we already called endAudio() on it as soon as we were done
                 // sending all the data.
-                //this.micClient.EndMicAndRecognition();
+                this.micClient.EndMicAndRecognition();
+
+                this.WriteResponseResult(e);
             }));
             }
 
@@ -118,6 +120,13 @@ namespace BotClient
                         i, 
                         e.PhraseResponse.Results[i].Confidence,
                         e.PhraseResponse.Results[i].DisplayText);
+
+                        
+                    if(e.PhraseResponse.Results[i].Confidence == Confidence.High)
+                    {
+                        sendText.Text = e.PhraseResponse.Results[i].DisplayText.Replace(".", ""); ;
+                        sendButton_Click(this, new EventArgs());
+                    }
                 }
 
                 this.WriteLine("\n");
@@ -153,6 +162,18 @@ namespace BotClient
             voice.SelectVoiceByHints(VoiceGender.Female);
             voice.Volume = 100;
             voice.Rate = 0;
+            voice.SpeakCompleted += Voice_SpeakCompleted;
+            voice.SpeakStarted += Voice_SpeakStarted;
+        }
+
+        private void Voice_SpeakStarted(object sender, SpeakStartedEventArgs e)
+        {            
+            this.micClient.EndMicAndRecognition();
+        }
+
+        private void Voice_SpeakCompleted(object sender, SpeakCompletedEventArgs e)
+        {
+            this.micClient.StartMicAndRecognition();
         }
 
         private async void Send(string input)
