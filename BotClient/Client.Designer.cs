@@ -53,16 +53,17 @@
             // 
             // sendText
             // 
+            this.sendText.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.sendText.Location = new System.Drawing.Point(13, 398);
             this.sendText.Name = "sendText";
-            this.sendText.Size = new System.Drawing.Size(532, 20);
+            this.sendText.Size = new System.Drawing.Size(532, 30);
             this.sendText.TabIndex = 2;
             // 
             // listenButton
             // 
-            this.listenButton.Location = new System.Drawing.Point(578, 398);
+            this.listenButton.Location = new System.Drawing.Point(578, 379);
             this.listenButton.Name = "listenButton";
-            this.listenButton.Size = new System.Drawing.Size(75, 23);
+            this.listenButton.Size = new System.Drawing.Size(75, 62);
             this.listenButton.TabIndex = 3;
             this.listenButton.Text = "Listen";
             this.listenButton.UseVisualStyleBackColor = true;
@@ -71,10 +72,11 @@
             // 
             this.sendButton.Location = new System.Drawing.Point(672, 379);
             this.sendButton.Name = "sendButton";
-            this.sendButton.Size = new System.Drawing.Size(139, 62);
+            this.sendButton.Size = new System.Drawing.Size(148, 62);
             this.sendButton.TabIndex = 3;
             this.sendButton.Text = "Send";
             this.sendButton.UseVisualStyleBackColor = true;
+            this.sendButton.Click += new System.EventHandler(this.sendButton_Click);
             // 
             // Client
             // 
