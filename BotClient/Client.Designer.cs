@@ -59,7 +59,7 @@
             this.sendText.Name = "sendText";
             this.sendText.Size = new System.Drawing.Size(532, 30);
             this.sendText.TabIndex = 2;
-            this.sendText.Enter += new System.EventHandler(this.SendText_Enter);
+            this.sendText.KeyUp += new System.Windows.Forms.KeyEventHandler(this.sendText_KeyUp);
             // 
             // sendButton
             // 

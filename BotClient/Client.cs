@@ -154,12 +154,17 @@ namespace BotClient
             sendText.Clear();
         }
 
-        private void SendText_Enter(object sender, EventArgs e)
+        private void sendText_KeyUp(object sender, KeyEventArgs e)
         {
-            Send(sendText.Text);
-            sendText.Clear();
-        } 
+            if (e.KeyCode == Keys.Enter)
+            {
+                Send(sendText.Text);
+                sendText.Clear();
+            }
+        }
+
         #endregion
+
 
     }
 }
